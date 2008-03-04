@@ -1,0 +1,10 @@
+Changes
+MANIFEST
+README
+META.yml
+Makefile.PL
+lib/Locale/Geocode.pm
+lib/Locale/Geocode/Territory.pm
+lib/Locale/Geocode/Division.pm
+t/1pod.t
+t/2geocode.t
