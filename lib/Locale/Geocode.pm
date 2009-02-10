@@ -84,7 +84,7 @@ Also included are, where applicable, FIPS codes.
 
 =cut
 
-our $VERSION = 1.11;
+our $VERSION = 1.20;
 
 use Locale::Geocode::Territory;
 use Locale::Geocode::Division;
@@ -100,11 +100,10 @@ $XML::Simple::PREFERRED_PARSER = 'XML::SAX::Expat';
 # ITU).  others are specific to Locale::Geocode for other practical
 # reasons (such as the usm extension for US overseas military or
 # usps for all US postal abbreviations).
-my @exts = qw(upu wco itu uk fx eu usm usps);
-my @defs = ();
+my @exts = qw(upu wco itu uk fx eu usm usps ust);
+my @defs = qw(ust);
 
 # parse the XML data
-my $str = <DATA>;
 my $opts = { ForceArray => [ 'division', 'ext', 'note' ], KeyAttr => [], SuppressEmpty => 1 };
 my $data = { raw => XMLin(\*DATA, %$opts) };
 
@@ -142,7 +141,7 @@ sub new
 	bless $self, $class;
 
 	my @exts = @defs;
-	
+
 	if ($args->{ext}) {
 		my $reftype = ref $args->{ext};
 
@@ -228,14 +227,44 @@ sub ext
 	my $self = shift;
 
 	if (scalar @_ > 0) {
-		my $all	= grep { $_ eq 'all' } @_;
-		my %neg	= map { substr($_, 1) => 1 } grep /^-/, @_;
-		my @a	= grep { !$neg{$_} } ($all ? @exts : grep !/^(-.*|all)$/, @_);
-
-		$self->{ext} = { map { $_ => 1 } @a };
+		$self->{ext} =
+		{
+			ust => 1, # 'ust' is always on unless explicitly disabled
+			map {
+				/^-(.*)$/
+					? ($1 => 0)
+					: $_ eq 'all'
+						? map { $_ => 1 } @exts
+						: ($_ => 1)
+			} @_
+		};
 	}
 
-	return keys %{ $self->{ext} };
+	return grep { $self->{ext}->{$_} } keys %{ $self->{ext} };
+}
+
+=item ext_enable
+
+=cut
+
+sub ext_enable
+{
+	my $self = shift;
+
+	foreach my $ext (@_) {
+		$self->{ext}->{$ext} = 1 if grep { $ext eq $_ } @exts;
+	}
+}
+
+=item ext_disable
+
+=cut
+
+sub ext_disable
+{
+	my $self = shift;
+
+	delete $self->{ext}->{$_} foreach @_;
 }
 
 sub chkext
@@ -272,7 +301,7 @@ sub import { @defs = @_[1..$#_] }
 1;
 
 __DATA__
-<?xml version="1.0" encoding="UTF-16" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <iso3166>
 	<territory>
 		<name>Afghanistan</name>
@@ -24189,6 +24218,7 @@ __DATA__
 			<code>AS</code>
 			<fips>60</fips>
 			<region></region>
+			<ext>ust</ext>
 		</division>
 		<division>
 			<name>Virginia</name>
@@ -24208,6 +24238,7 @@ __DATA__
 			<code>PR</code>
 			<fips>72</fips>
 			<region></region>
+			<ext>ust</ext>
 		</division>
 		<division>
 			<name>New Mexico</name>
@@ -24347,6 +24378,7 @@ __DATA__
 			<code>MP</code>
 			<fips>69</fips>
 			<region></region>
+			<ext>ust</ext>
 		</division>
 		<division>
 			<name>Wisconsin</name>
@@ -24378,6 +24410,7 @@ __DATA__
 			<code>VI</code>
 			<fips>78</fips>
 			<region></region>
+			<ext>ust</ext>
 		</division>
 		<division>
 			<name>Guam</name>
@@ -24385,6 +24418,7 @@ __DATA__
 			<code>GU</code>
 			<fips>66</fips>
 			<region></region>
+			<ext>ust</ext>
 		</division>
 		<division>
 			<name>South Carolina</name>
@@ -24410,6 +24444,7 @@ __DATA__
 			<code>UM</code>
 			<fips></fips>
 			<region></region>
+			<ext>ust</ext>
 		</division>
 		<division>
 			<name>Tennessee</name>
